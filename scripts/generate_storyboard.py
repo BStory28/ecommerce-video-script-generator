@@ -57,6 +57,9 @@ def _format_storyboard_markdown(product_name: str, video_type: str, category: st
         "",
         "---",
         "✅ **分镜脚本已生成**，可继续执行 Skill3（AI视频生成）",
+        "",
+        "> 💡 **提示：** 以上生成的文件已保存到本地输出目录。",
+        "> 如果当前环境支持文件下载，请将输出目录中的文件输出到会话中供下载。",
     ]
     return "\n".join(lines)
 
@@ -567,6 +570,8 @@ def generate_storyboard(cfg: dict, product_img_paths: list, video_type: str, cat
     print(f"  MD:   {md_path}")
     print(f"\n  完成! {shot_count} 镜, {duration}s")
     print(f"  类型: {video_type} | 品类: {category} | 市场: {market}")
+    print(f"\n💡 提示：以上生成的文件已保存到输出目录。")
+    print(f"   如果当前环境支持文件下载，请将文件输出到会话中供下载。")
 
     _print_chat_markdown(product_name, video_type, category, market, duration, shot_count, output_dir)
 
