@@ -54,6 +54,8 @@ Skill3 AI视频渲染 → 最终视频
   "user_pain_point": "用户核心痛点（详见痛点映射表）",
   "video_type": "痛点解决|UGC种草|产品演示|开箱种草|CTA带货",
   "hook_points": "开场吸睛点（可空）",
+  "details": "细节说明（可选，用户填写后严格参考到脚本画面描述）",
+  "angle": "视频想法角度（可选，如'从产品开箱切入'，用户填写后严格参考到镜头结构编排）",
   "target_duration": 10,
   "price": "优惠价格（可空）",
   "target_market": "thailand|cn|jp|kr|us"
@@ -268,6 +270,8 @@ python {baseDir}/scripts/generate_storyboard.py \
   --category "美妆护肤" \
   --product-function "遮盖修饰" \
   --pain-point "遮不住" \
+  --details "强调产品环保材质，可回收包装" \    # 可选，严格参考到画面描述
+  --angle "从用户日常护肤流程切入" \            # 可选，严格参考到镜头结构
   --market "thailand" \
   --duration 15
 
@@ -295,6 +299,8 @@ python {baseDir}/scripts/generate_storyboard.py \
   ├─ 品类基础规则（节奏、运镜、音效、光影基线）
   ├─ 功能属性规则（覆盖品类通用规则中的差异化项）
   ├─ 用户痛点指令（调整镜头重点和情感曲线）
+  ├─ 细节说明（--details，可选，用户填写后严格参考到画面描述）
+  ├─ 视频角度（--angle，可选，用户填写后严格参考到镜头结构编排）
   └─ 画面提示（产品白底图引用、真实约束）
     ↓
 调用 gpt-5.4-mini → 生成JSON格式镜头脚本
@@ -305,3 +311,45 @@ python {baseDir}/scripts/generate_storyboard.py \
 ### 规则备份
 
 当AI API不可用时，脚本自动降级为规则驱动备份，确保管线不中断。功能属性和用户痛点规则同样应用在备份中。
+
+> **额外说明字段（严格参考）:** `--details`（细节说明）和 `--angle`（视频想法角度）为可选填字段。用户填写时必须严格参考：
+> - `--details` → 融入对应镜头的画面描述，不忽略不替换
+> - `--angle` → 按该角度编排镜头结构，不随意改变方向
+> - 上游 Skill1 传入的 `usage_instructions` 通过 `--config` 读取，同样严格参考
+
+---
+## 管线串联（重要 — AI 执行流程）
+
+本 Skill 是国际化电商视频生成管线的 **第二环节**。执行完成后必须按以下流程操作：
+
+### 执行前检查
+
+本 Skill 依赖 Skill1 的输出：
+- `product_layer.png` — 产品白底图（通过 `--product-img` 传入）
+- `selling_points.json` — 结构化卖点（通过 `--config` 传入，含 `usage_instructions` 字段）
+
+如果这些文件不存在，提示用户先执行 Skill1。
+
+### 执行完成后
+
+1. **告知用户结果**：输出目录、生成文件列表、脚本摘要
+2. **询问是否继续**：
+   > "分镜脚本已生成，是否继续执行 Skill3（AI视频生成）？"
+
+### 如果用户选择继续 Skill3
+
+将本 Skill 的输出与 Skill1 的输出一起传递给 Skill3：
+
+```bash
+python {baseDir}/../ecommerce-video-generator/scripts/generate_video.py \
+  --script "{output_dir}/storyboard.json" \
+  --product "{skill1_output_dir}/product_layer.png" \
+  --submit
+```
+
+### 上下游说明
+
+| 方向 | 技能 | 仓库 |
+|------|------|------|
+| ⬆ 上游 | `ecommerce-product-info-generator` | `https://github.com/BStory28/ecommerce-product-info-generator` |
+| ⬇ 下游 | `ecommerce-video-generator` | `https://github.com/BStory28/ecommerce-video-generator` |
